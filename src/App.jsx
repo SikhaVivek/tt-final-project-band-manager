@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 import SongForm from './components/SongForm.jsx'
 import SongList from './components/SongList.jsx'
@@ -6,12 +6,26 @@ import Setlist from './components/Setlist.jsx'
 import PracticeTimer from './components/PracticeTimer.jsx'
 
 function App() {
-  const [songs, setSongs] = useState([
-    { id: 1, name: 'Puvulalo Dagunna', key: 'A', tempo: 95, notes: 'Acoustic intro', chords: '| A | D | E | D |\n| A | D | E | A |', lyrics: 'Puvulalo dagunna prema\nEe hrudayamlo kaluvuna mana' },
-    { id: 2, name: 'Asha Pasha', key: 'Dm', tempo: 110, notes: 'Drums strong', chords: '| Dm | Bb | F | C |\n| Dm | Bb | F | C |', lyrics: 'Asha pasha bandhalu vidichesina vela\nKalala dharicheti prema' },
-    { id: 3, name: 'Monna Kanipinchavu', key: 'G', tempo: 100, notes: '', chords: '', lyrics: '' }
-  ])
-  const [setlist, setSetlist] = useState([])
+  const [songs, setSongs] = useState(() => {
+    const savedSongs = localStorage.getItem('band-manager-songs')
+    return savedSongs ? JSON.parse(savedSongs) : [
+      { id: 1, name: 'Puvulalo Dagunna', artist: 'A.R. Rahman', key: 'A', tempo: 95, notes: 'Acoustic intro', chords: '| A | D | E | D |\n| A | D | E | A |', lyrics: 'Puvulalo dagunna prema\nEe hrudayamlo kaluvuna mana' },
+      { id: 2, name: 'Asha Pasha', artist: 'Sid Sriram', key: 'Dm', tempo: 110, notes: 'Drums strong', chords: '| Dm | Bb | F | C |\n| Dm | Bb | F | C |', lyrics: 'Asha pasha bandhalu vidichesina vela\nKalala dharicheti prema' },
+      { id: 3, name: 'Monna Kanipinchavu', artist: 'S.P. Balasubrahmanyam', key: 'G', tempo: 100, notes: '', chords: '', lyrics: '' }
+    ]
+  })
+  const [setlist, setSetlist] = useState(() => {
+    const savedSetlist = localStorage.getItem('band-manager-setlist')
+    return savedSetlist ? JSON.parse(savedSetlist) : []
+  })
+
+  useEffect(() => {
+    localStorage.setItem('band-manager-songs', JSON.stringify(songs))
+  }, [songs])
+
+  useEffect(() => {
+    localStorage.setItem('band-manager-setlist', JSON.stringify(setlist))
+  }, [setlist])
 
   const addSong = (song) => {
     const id = Date.now()

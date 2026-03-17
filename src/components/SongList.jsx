@@ -4,9 +4,31 @@ function SongList({ songs, onAddToSetlist, onUpdateSong }) {
   const [editingId, setEditingId] = useState(null)
   const [draft, setDraft] = useState('')
   const [draftLyrics, setDraftLyrics] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const lyricsUrl = (name) =>
-    `https://www.google.com/search?q=${encodeURIComponent(`${name} lyrics`)}`
+  const lyricsUrl = (name, artist) =>
+    `https://www.google.com/search?q=${encodeURIComponent(`${artist ? `${artist} ` : ''}${name} lyrics`)}`
+
+  const fetchLyrics = async (song) => {
+    if (!song.name || !song.artist) {
+      alert('Artist and song name are required to fetch lyrics automatically.')
+      return
+    }
+    setLoading(true)
+    try {
+      const response = await fetch(`https://api.lyrics.ovh/v1/${song.artist}/${song.name}`)
+      const data = await response.json()
+      if (data.lyrics) {
+        setDraftLyrics(data.lyrics)
+      } else {
+        alert('Lyrics not found!')
+      }
+    } catch (err) {
+      alert('Error fetching lyrics. Check artist/song name.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const startEdit = (song) => {
     setEditingId(song.id)
@@ -33,11 +55,13 @@ function SongList({ songs, onAddToSetlist, onUpdateSong }) {
         return (
           <div key={s.id} className="card">
             <div className="row">
-              <div className="title">{s.name}</div>
+              <div className="title">
+                {s.name} {s.artist ? <span style={{ opacity: 0.6, fontSize: '0.9em', fontWeight: 400 }}>by {s.artist}</span> : null}
+              </div>
               <div className="row">
                 <a
                   className="btn"
-                  href={lyricsUrl(s.name)}
+                  href={lyricsUrl(s.name, s.artist)}
                   target="_blank"
                   rel="noopener noreferrer"
                   title="Open Google in new tab"
@@ -62,13 +86,25 @@ function SongList({ songs, onAddToSetlist, onUpdateSong }) {
                   onChange={(e) => setDraft(e.target.value)}
                   placeholder="Chords (e.g., | Am | G | F | E |)"
                 />
-                <textarea
-                  className="textarea"
-                  rows="6"
-                  value={draftLyrics}
-                  onChange={(e) => setDraftLyrics(e.target.value)}
-                  placeholder="Lyrics (line by line; chords will show above)"
-                />
+                <div style={{ position: 'relative' }}>
+                  <textarea
+                    className="textarea"
+                    rows="6"
+                    value={draftLyrics}
+                    onChange={(e) => setDraftLyrics(e.target.value)}
+                    placeholder="Lyrics (line by line; chords will show above)"
+                    style={{ paddingBottom: '3rem' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fetchLyrics(s)}
+                    disabled={loading}
+                    className="btn btn-ghost"
+                    style={{ position: 'absolute', bottom: '0.5rem', right: '0.5rem', padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+                  >
+                    {loading ? 'Fetching...' : 'Auto-fetch Lyrics'}
+                  </button>
+                </div>
                 <div className="row" style={{ justifyContent: 'flex-end' }}>
                   <button className="btn btn-ghost" onClick={cancel}>Cancel</button>
                   <button className="btn btn-primary" onClick={save}>Save</button>
