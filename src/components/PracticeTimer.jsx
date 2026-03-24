@@ -1,70 +1,73 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState, useEffect } from 'react'
+import { Play, Pause, RotateCcw, Clock } from 'lucide-react'
 
 function PracticeTimer() {
-  const [minutes, setMinutes] = useState(10)
-  const [remaining, setRemaining] = useState(10 * 60)
-  const [running, setRunning] = useState(false)
-  const intervalRef = useRef(null)
+  const [seconds, setSeconds] = useState(0)
+  const [isActive, setIsActive] = useState(false)
 
   useEffect(() => {
-    if (running) {
-      intervalRef.current = setInterval(() => {
-        setRemaining((r) => {
-          if (r <= 1) {
-            clearInterval(intervalRef.current)
-            return 0
-          }
-          return r - 1
-        })
+    let interval = null
+    if (isActive) {
+      interval = setInterval(() => {
+        setSeconds(prev => prev + 1)
       }, 1000)
+    } else {
+      clearInterval(interval)
     }
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-    }
-  }, [running])
+    return () => clearInterval(interval)
+  }, [isActive])
 
-  useEffect(() => {
-    if (!running) setRemaining(minutes * 60)
-  }, [minutes, running])
-
-  const start = () => setRunning(true)
-  const stop = () => setRunning(false)
-  const reset = () => {
-    setRunning(false)
-    setRemaining(minutes * 60)
+  const formatTime = (totalSeconds) => {
+    const hrs = Math.floor(totalSeconds / 3600)
+    const mins = Math.floor((totalSeconds % 3600) / 60)
+    const secs = totalSeconds % 60
+    
+    const parts = [hrs, mins, secs].map(v => v.toString().padStart(2, '0'))
+    if (hrs === 0) parts.shift()
+    return parts.join(':')
   }
 
-  const mm = String(Math.floor(remaining / 60)).padStart(2, '0')
-  const ss = String(remaining % 60).padStart(2, '0')
-  const total = Math.max(1, minutes * 60)
-  const pct = Math.max(0, Math.min(1, remaining / total))
-  const deg = Math.round(pct * 360)
-
   return (
-    <div className="timer">
-      <div
-        style={{
-          width: 140,
-          height: 140,
-          borderRadius: '999px',
-          background: `conic-gradient(var(--accent) ${deg}deg, #2a3140 ${deg}deg)`,
-          display: 'grid',
-          placeItems: 'center',
-          border: '1px solid #30384a'
-        }}
-      >
-        <div className="time">{mm}:{ss}</div>
+    <div className="timer-container">
+      <div style={{ position: 'relative', display: 'inline-block' }}>
+        <div className={`timer-display ${isActive ? 'active' : ''}`} style={{ transition: 'all 0.5s ease' }}>
+          {formatTime(seconds)}
+        </div>
+        <div style={{ 
+          position: 'absolute', 
+          top: '-1rem', 
+          right: '-1rem', 
+          background: isActive ? 'var(--primary)' : 'var(--text-dim)', 
+          padding: '0.2rem 0.5rem', 
+          borderRadius: '4px', 
+          fontSize: '0.6rem', 
+          fontWeight: 900, 
+          color: '#000',
+          boxShadow: isActive ? '0 0 10px var(--primary)' : 'none'
+        }}>
+          {isActive ? 'RECORDING' : 'IDLE'}
+        </div>
       </div>
-      <div className="controls">
-        <input
-          type="number"
-          min="1"
-          value={minutes}
-          onChange={(e) => setMinutes(Number(e.target.value))}
-        />
-        <button className="btn btn-primary" onClick={start} disabled={running}>Start</button>
-        <button className="btn" onClick={stop} disabled={!running}>Stop</button>
-        <button className="btn btn-ghost" onClick={reset}>Reset</button>
+      
+      <div className="timer-controls">
+        <button 
+          className={isActive ? "btn-ghost" : "btn-primary"} 
+          onClick={() => setIsActive(!isActive)}
+          style={{ width: '140px' }}
+        >
+          {isActive ? <><Pause size={16} /> Pause</> : <><Play size={16} /> Start</>}
+        </button>
+        <button 
+          className="btn-ghost" 
+          onClick={() => { setSeconds(0); setIsActive(false); }}
+          title="Reset Session"
+        >
+          <RotateCcw size={16} />
+        </button>
+      </div>
+      
+      <div style={{ marginTop: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: 'var(--text-dim)', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+        <Clock size={12} /> Total Practice Time
       </div>
     </div>
   )
